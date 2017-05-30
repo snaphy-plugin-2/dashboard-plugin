@@ -9,6 +9,7 @@ angular.module($snaphy.getModuleName())
         //Adding the login state from the login plugins..
         $scope.loginState  = $snaphy.loadSettings('login', "loginState");
         $scope.homeState   = $snaphy.loadSettings('dashboard', "homeState");
+        $scope.companyName   = $snaphy.loadSettings('dashboard', "companyName");
         //Load all the databases list..
         $scope.databasesList = $snaphy.loadSettings('robustAutomata', "loadDatabases");
 
