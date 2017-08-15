@@ -5,6 +5,11 @@
   "load":{
     "root":true
   },
+  "loadDatabases": [
+    "Employee",
+    "Customer",
+    "SnaphyAcl"
+  ],
   "services": {},
   "pluginDependencies": {
     "login": "^2.0.0"
