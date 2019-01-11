@@ -19,6 +19,23 @@ module.exports = function( server, databaseObj, helper, packageObj) {
     };
 
 
+    const convertGroupToList = (groups) => {
+        let list = []
+        if(groups){
+            for(let groupName in groups){
+                if(groups.hasOwnProperty(groupName)){
+                    const groupItems = groups[groupName] || []
+                    list = [
+                        ...list,
+                        ...groupItems,
+                    ]
+                }
+            }
+        }
+        return list;
+    }
+
+
     /**
      * Load static data to database..
      * @param req
@@ -30,9 +47,15 @@ module.exports = function( server, databaseObj, helper, packageObj) {
             //const before = new Date().getTime();
             load(req, data)
                 .then(function (databaseList) {
-                    data["databaseList"] = databaseList;
-
-                    return loadAbsoluteSchema(databaseList);
+                    if(isObject(databaseList)){
+                        data["isGroup"] = true;
+                        data["groups"] = databaseList
+                        data["databaseList"] = convertGroupToList(databaseList);
+                        return loadAbsoluteSchema(data["databaseList"]);
+                    }else{
+                        data["databaseList"] = databaseList;
+                        return loadAbsoluteSchema(databaseList);
+                    }
                 })
                 .then(function (schema) {
                     //console.log(new Date().getTime() - before);
@@ -96,6 +119,15 @@ module.exports = function( server, databaseObj, helper, packageObj) {
       });
     };
 
+    const isObject = (value) => {
+        return Object.prototype.toString.call(value) === '[object Object]'
+    }
+
+
+    const isArray = (value) => {
+        return Object.prototype.toString.call(value) === '[object Array]'
+    }
+
 
 
     //Creating a memoization method for all the
@@ -113,7 +145,7 @@ module.exports = function( server, databaseObj, helper, packageObj) {
                     if(SnaphyACL){
                         getACL(SnaphyACL, rolesList)
                             .then(function (aclList) {
-                                if(databasesList){
+                                if(databasesList && isArray(databasesList)){
                                     databasesList.forEach(function (item) {
                                         var allowed = true;
                                         if(aclList[item]){
@@ -126,6 +158,27 @@ module.exports = function( server, databaseObj, helper, packageObj) {
                                             list.push(item);
                                         }
                                     });
+                                }else if(databasesList && isObject(databasesList)){
+                                    list = {}
+                                    for(let groupName in databasesList){
+                                        if(databasesList.hasOwnProperty(groupName)){
+                                            const tempDatabaseList = databasesList[groupName] || [];
+                                            const allowedGrpList = []
+                                            tempDatabaseList.forEach(function (item) {
+                                                var allowed = true;
+                                                if(aclList[item]){
+                                                    if(aclList[item].read === "deny"){
+                                                        allowed = false;
+                                                    }
+                                                }
+        
+                                                if(allowed){
+                                                    allowedGrpList.push(item);
+                                                }
+                                            });
+                                            list[groupName] = allowedGrpList;
+                                        }
+                                    }
                                 }
                                 resolve(list);
                             })
