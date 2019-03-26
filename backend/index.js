@@ -1,5 +1,5 @@
 'use strict';
-module.exports = function( server, databaseObj, helper, packageObj) {
+module.exports = function (server, databaseObj, helper, packageObj) {
     const Promise = require("bluebird");
     /**
      * Here server is the main app object
@@ -14,16 +14,16 @@ module.exports = function( server, databaseObj, helper, packageObj) {
      * It is a constructor and is populated once the server starts.
      * @return {[type]} [description]
      */
-    var init = function(){
+    var init = function () {
 
     };
 
 
     const convertGroupToList = (groups) => {
         let list = []
-        if(groups){
-            for(let groupName in groups){
-                if(groups.hasOwnProperty(groupName)){
+        if (groups) {
+            for (let groupName in groups) {
+                if (groups.hasOwnProperty(groupName)) {
                     const groupItems = groups[groupName] || []
                     list = [
                         ...list,
@@ -47,12 +47,12 @@ module.exports = function( server, databaseObj, helper, packageObj) {
             //const before = new Date().getTime();
             load(req, data)
                 .then(function (databaseList) {
-                    if(isObject(databaseList)){
+                    if (isObject(databaseList)) {
                         data["isGroup"] = true;
                         data["groups"] = databaseList
                         data["databaseList"] = convertGroupToList(databaseList);
                         return loadAbsoluteSchema(data["databaseList"]);
-                    }else{
+                    } else {
                         data["databaseList"] = databaseList;
                         return loadAbsoluteSchema(databaseList);
                     }
@@ -75,48 +75,48 @@ module.exports = function( server, databaseObj, helper, packageObj) {
      * @param databaseList
      */
     const loadAbsoluteSchema = function (databaseList) {
-      return new Promise(function (resolve, reject) {
-          const SCHEMA = {};
+        return new Promise(function (resolve, reject) {
+            const SCHEMA = {};
 
-         if(databaseList){
-             if(databaseList.length){
-                 const promiseList = [];
-                 databaseList.forEach(function (database) {
-                     if(database){
-                         const dataModel = server.models[database];
-                         if(dataModel){
-                             if(dataModel.getAbsoluteSchema){
-                                 (function (dataModel, database) {
-                                     promiseList.push(new Promise(function (resolve, reject) {
-                                         dataModel.getAbsoluteSchema(function(err, values) {
-                                             if(err){
-                                                 reject(err);
-                                             }else{
-                                                 SCHEMA[database] = values;
-                                                 resolve();
-                                             }
-                                         });
-                                     }));
-                                 })(dataModel, database);
-                             }
-                         }
-                     }
-                 });
-                 
-                 Promise.all(promiseList)
-                     .then(function () {
-                         resolve(SCHEMA);
-                     })
-                     .catch(function (error) {
-                         reject(error);
-                     })
-             }else{
-                 resolve();
-             }
-         }else{
-             resolve();
-         }
-      });
+            if (databaseList) {
+                if (databaseList.length) {
+                    const promiseList = [];
+                    databaseList.forEach(function (database) {
+                        if (database) {
+                            const dataModel = server.models[database];
+                            if (dataModel) {
+                                if (dataModel.getAbsoluteSchema) {
+                                    (function (dataModel, database) {
+                                        promiseList.push(new Promise(function (resolve, reject) {
+                                            dataModel.getAbsoluteSchema(function (err, values) {
+                                                if (err) {
+                                                    reject(err);
+                                                } else {
+                                                    SCHEMA[database] = values;
+                                                    resolve();
+                                                }
+                                            });
+                                        }));
+                                    })(dataModel, database);
+                                }
+                            }
+                        }
+                    });
+
+                    Promise.all(promiseList)
+                        .then(function () {
+                            resolve(SCHEMA);
+                        })
+                        .catch(function (error) {
+                            reject(error);
+                        })
+                } else {
+                    resolve();
+                }
+            } else {
+                resolve();
+            }
+        });
     };
 
     const isObject = (value) => {
@@ -138,45 +138,49 @@ module.exports = function( server, databaseObj, helper, packageObj) {
             var databasesList = packageObj.loadDatabases;
             const login = helper.loadPlugin("login");
             login.getRoles(server, request, function (error, rolesList) {
-                if(rolesList){
+                if (rolesList) {
                     //TODO: Add ACL to data..
                     data.acl = rolesList;
                     const SnaphyACL = databaseObj.SnaphyACL;
-                    if(SnaphyACL){
+                    if (SnaphyACL) {
                         getACL(SnaphyACL, rolesList)
                             .then(function (aclList) {
-                                if(databasesList && isArray(databasesList)){
+                                if (databasesList && isArray(databasesList)) {
                                     databasesList.forEach(function (item) {
                                         var allowed = true;
-                                        if(aclList[item]){
-                                            if(aclList[item].read === "deny"){
+                                        if (aclList[item]) {
+                                            if (aclList[item].read === "deny") {
                                                 allowed = false;
                                             }
                                         }
 
-                                        if(allowed){
+                                        if (allowed) {
                                             list.push(item);
                                         }
                                     });
-                                }else if(databasesList && isObject(databasesList)){
+                                } else if (databasesList && isObject(databasesList)) {
                                     list = {}
-                                    for(let groupName in databasesList){
-                                        if(databasesList.hasOwnProperty(groupName)){
+                                    for (let groupName in databasesList) {
+                                        if (databasesList.hasOwnProperty(groupName)) {
                                             const tempDatabaseList = databasesList[groupName] || [];
                                             const allowedGrpList = []
                                             tempDatabaseList.forEach(function (item) {
                                                 var allowed = true;
-                                                if(aclList[item]){
-                                                    if(aclList[item].read === "deny"){
+                                                if (aclList[item]) {
+                                                    if (aclList[item].read === "deny") {
                                                         allowed = false;
                                                     }
                                                 }
-        
-                                                if(allowed){
+
+                                                if (allowed) {
                                                     allowedGrpList.push(item);
                                                 }
                                             });
-                                            list[groupName] = allowedGrpList;
+                                            if (allowedGrpList && allowedGrpList.length) {
+                                                list[groupName] = allowedGrpList;
+                                            } else {
+                                                delete list[groupName];
+                                            }
                                         }
                                     }
                                 }
@@ -185,11 +189,11 @@ module.exports = function( server, databaseObj, helper, packageObj) {
                             .catch(function (error) {
                                 reject(error);
                             });
-                    }else {
+                    } else {
                         resolve(databasesList);
                     }
 
-                }else {
+                } else {
                     resolve(databasesList);
                 }
             });
@@ -204,18 +208,18 @@ module.exports = function( server, databaseObj, helper, packageObj) {
     const getACL = function (SnaphyACL, rolesList) {
         return new Promise(function (resolve, reject) {
             SnaphyACL.find({
-                where:{
-                    role:{
+                where: {
+                    role: {
                         inq: rolesList
                     }
                 }
             })
                 .then(function (acl) {
                     const aclList = {};
-                    if(acl){
-                        if(acl.length){
+                    if (acl) {
+                        if (acl.length) {
                             acl.forEach(function (item) {
-                                if(item.model){
+                                if (item.model) {
                                     aclList[item.model] = item;
                                 }
                             })
